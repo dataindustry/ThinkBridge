@@ -56,5 +56,8 @@
     <ClInclude Include="lib\nvapi\nvapi_lite_surround.h">
       <Filter>头文件</Filter>
     </ClInclude>
+    <ClInclude Include="ThinkBridge.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>

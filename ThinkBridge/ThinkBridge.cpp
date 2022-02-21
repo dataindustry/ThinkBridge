@@ -1,80 +1,11 @@
 ﻿#include "_prec.h"
 #include "lib/TVicPort.h"
 #include "lib/nvapi/nvapi.h"
-
-
-// Registers of the embedded controller
-#define EC_DATAPORT	0x1600	// EC data io-port 0x62
-#define EC_CTRLPORT	0x1604	// EC control io-port 0x66
-
-
-// Embedded controller status register bits
-#define EC_STAT_OBF	 0x01 // Output buffer full 
-#define EC_STAT_IBF	 0x02 // Input buffer full 
-#define EC_STAT_CMD	 0x08 // Last write was a command write (0=data) 
-
-
-// Embedded controller commands
-// (write to EC_CTRLPORT to initiate read/write operation)
-#define EC_CTRLPORT_READ	 (char)0x80	
-#define EC_CTRLPORT_WRITE	 (char)0x81
-#define EC_CTRLPORT_QUERY	 (char)0x84
-
-
-#define TP_ECOFFSET_FAN		 (char)0x2F	// 1 byte (binary xyzz zzz)
-#define TP_ECOFFSET_FANSPEED (char)0x84 // 16 bit word, lo/hi byte
-#define TP_ECOFFSET_TEMP0    (char)0x78	// 8 temp sensor bytes from here
-#define TP_ECOFFSET_TEMP1    (char)0xC0 // 4 temp sensor bytes from here
-#define TP_ECOFFSET_FAN1	 (char)0x0000
-#define TP_ECOFFSET_FAN2	 (char)0x0001
-#define TP_ECOFFSET_FAN_SWITCH (char)0x31
-
-
-struct FCSTATE {
-	char FanCtrl,
-		FanSpeedLo1,
-		FanSpeedHi1,
-		FanSpeedLo2,
-		FanSpeedHi2;
-} State;
+#include "ThinkBridge.h"
 
 
 //-------------------------------------------------------------------------
-//
-//-------------------------------------------------------------------------
-DWORD deax, debx, decx, dedx;
-__declspec(dllexport) int ReadCpuName(char* cpuName)
-{
-	const DWORD id = 0x80000002;
-
-	memset(cpuName, 0, sizeof(cpuName));
-
-	for (DWORD t = 0; t < 3; t++) {
-
-		const DWORD veax = id + t;
-
-		__asm
-		{
-			mov eax, veax
-			cpuid
-			mov deax, eax
-			mov debx, ebx
-			mov decx, ecx
-			mov dedx, edx
-		}
-
-		memcpy(cpuName + 16 * t + 0, &deax, 4);
-		memcpy(cpuName + 16 * t + 4, &debx, 4);
-		memcpy(cpuName + 16 * t + 8, &decx, 4);
-		memcpy(cpuName + 16 * t + 12, &dedx, 4);
-	}
-
-	return 0;
-
-}
-
-//-------------------------------------------------------------------------
-// read a byte from the embedded controller (EC) via port io
+// built-in. read a byte from the embedded controller (EC) via port io
 //-------------------------------------------------------------------------
 int ReadByteFromEC(int offset, char* pdata)
 {
@@ -141,7 +72,7 @@ int ReadByteFromEC(int offset, char* pdata)
 
 
 //-------------------------------------------------------------------------
-// write a byte to the embedded controller (EC) via port io
+// built-in. write a byte to the embedded controller (EC) via port io
 //-------------------------------------------------------------------------
 int WriteByteToEC(int offset, char NewData)
 {
@@ -208,26 +139,195 @@ int WriteByteToEC(int offset, char NewData)
 
 
 //-------------------------------------------------------------------------
+// built-in.
+//-------------------------------------------------------------------------
+int ReadEcRaw(FCSTATE* pfcstate) {
+
+	int ok;
+
+	// fan 1
+	ok = WriteByteToEC(TP_ECOFFSET_FAN_SWITCH, TP_ECOFFSET_FAN1);
+	if (ok)
+		ok = ReadByteFromEC(TP_ECOFFSET_FANSPEED, &pfcstate->FanSpeedLo1);
+	if (!ok) {
+		printf("failed to read FanSpeedLowByte 1 from EC");
+	}
+
+	if (ok)
+		ok = ReadByteFromEC(TP_ECOFFSET_FANSPEED + 1, &pfcstate->FanSpeedHi1);
+	if (!ok) {
+		printf("failed to read FanSpeedHighByte 1 from EC");
+	}
+	ok = ReadByteFromEC(TP_ECOFFSET_FAN, &pfcstate->Fan1StateLevel);
+
+	// fan 2
+	ok = WriteByteToEC(TP_ECOFFSET_FAN_SWITCH, TP_ECOFFSET_FAN2);
+	if (ok)
+		ok = ReadByteFromEC(TP_ECOFFSET_FANSPEED, &pfcstate->FanSpeedLo2);
+	if (!ok) {
+		printf("failed to read FanSpeedLowByte 2 from EC");
+	}
+
+	if (ok)
+		ok = ReadByteFromEC(TP_ECOFFSET_FANSPEED + 1, &pfcstate->FanSpeedHi2);
+	if (!ok) {
+		printf("failed to read FanSpeedHighByte 2 from EC");
+	}
+	ok = ReadByteFromEC(TP_ECOFFSET_FAN, &pfcstate->Fan2StateLevel);
+
+	return 0;
+
+}
+
+
+//-------------------------------------------------------------------------
+// built-in.
+//-------------------------------------------------------------------------
+int ReadEcStatus(FCSTATE* pfcstate) {
+
+	char ok = 0;
+
+	for (int i = 0; i < 3; i++) {
+		ok = ReadEcRaw(pfcstate);
+		if (ok)
+			break;
+		::Sleep(200);
+	}
+
+	return ok;
+}
+
+
+//-------------------------------------------------------------------------
 //
 //-------------------------------------------------------------------------
-int SetFanStateLevel(int fanctrl1, int fanctrl2)
+int StartDevice()
+{
+	bool ok = false;
+	NvAPI_Status nvapi_ok = NVAPI_ERROR;
+
+	for (int i = 0; i < 180; i++)
+	{
+		ok = OpenTVicPort();
+		if (ok) break;
+
+		::Sleep(1000);
+	}
+
+	for (int i = 0; i < 180; i++)
+	{
+		nvapi_ok = NvAPI_Initialize();
+		if (nvapi_ok == NVAPI_OK) break;
+
+		::Sleep(1000);
+	}
+
+	SetHardAccess(true);
+
+	return 0;
+}
+
+
+//-------------------------------------------------------------------------
+//
+//-------------------------------------------------------------------------
+int CloseDevice()
+{
+	SetHardAccess(false);
+	CloseTVicPort();
+	
+	return 0;
+}
+
+
+//-------------------------------------------------------------------------
+//
+//-------------------------------------------------------------------------
+int ReadCpuName(string* cpuName)
+{
+
+	char _cpuName[48] = {0};
+
+	const DWORD id = 0x80000002;
+
+	memset(_cpuName, 0, sizeof(_cpuName));
+
+	for (DWORD t = 0; t < 3; t++) {
+
+		const DWORD veax = id + t;
+
+		__asm
+		{
+			mov eax, veax
+			cpuid
+			mov deax, eax
+			mov debx, ebx
+			mov decx, ecx
+			mov dedx, edx
+		}
+
+		memcpy(_cpuName + 16 * t + 0, &deax, 4);
+		memcpy(_cpuName + 16 * t + 4, &debx, 4);
+		memcpy(_cpuName + 16 * t + 8, &decx, 4);
+		memcpy(_cpuName + 16 * t + 12, &dedx, 4);
+	}
+
+	*cpuName = _cpuName;
+
+	return 0;
+
+}
+
+
+//-------------------------------------------------------------------------
+//
+//-------------------------------------------------------------------------
+int ReadGpuName(string *gpuName)
+{
+	NvAPI_Status nvapi_ok = NVAPI_ERROR;
+
+	// Get GPU Name
+	NvU32 count;
+	NvPhysicalGpuHandle handle;
+
+	NvAPI_ShortString _gpuName;
+
+	std::string a = "";
+
+	nvapi_ok = NvAPI_EnumPhysicalGPUs(&handle, &count);
+	if (nvapi_ok != NVAPI_OK) return 1;
+
+	nvapi_ok = NvAPI_GPU_GetFullName(handle, _gpuName);
+	if (nvapi_ok != NVAPI_OK) return 1;
+
+	*gpuName = _gpuName;
+
+	return 0;
+}
+
+
+//-------------------------------------------------------------------------
+//
+//-------------------------------------------------------------------------
+int SetFanStateLevel(int fan1statelevel, int fan2statelevel)
 {
 	int ok = 0;
-	int fan1_ok = 0;
-	int fan2_ok = 0;
 
-	char fanstate1 = 0;
-	char fanstate2 = 0;
+	// int fan1_ok = 0;
+	// int fan2_ok = 0;
+
+	// char fanstate1 = 0;
+	// char fanstate2 = 0;
 
 	for (int i = 0; i < 5; i++) {
 
 		ok = WriteByteToEC(TP_ECOFFSET_FAN_SWITCH, TP_ECOFFSET_FAN1);
-		ok = WriteByteToEC(TP_ECOFFSET_FAN, fanctrl1);
+		ok = WriteByteToEC(TP_ECOFFSET_FAN, fan1statelevel);
 
 		::Sleep(100);
 
 		ok = WriteByteToEC(TP_ECOFFSET_FAN_SWITCH, TP_ECOFFSET_FAN2);
-		ok = WriteByteToEC(TP_ECOFFSET_FAN, fanctrl2);
+		ok = WriteByteToEC(TP_ECOFFSET_FAN, fan2statelevel);
 
 		::Sleep(100);
 
@@ -248,9 +348,23 @@ int SetFanStateLevel(int fanctrl1, int fanctrl2)
 
 
 //-------------------------------------------------------------------------
+//
+//-------------------------------------------------------------------------
+int ReadCpuTemperture(int* cpuTemperture)
+{
+	char value;
+	ReadByteFromEC(TP_ECOFFSET_TEMP0, &value);
+
+	*cpuTemperture = (int)value;
+
+	return 0;
+}
+
+
+//-------------------------------------------------------------------------
 //  
 //-------------------------------------------------------------------------
-int ReadGPUTemperture(int* gpuTemperture)
+int ReadGpuTemperture(int* gpuTemperture)
 {
 	NvAPI_Status nvapi_ok = NVAPI_ERROR;
 
@@ -263,12 +377,7 @@ int ReadGPUTemperture(int* gpuTemperture)
 	thermal.version = NV_GPU_THERMAL_SETTINGS_VER;
 	nvapi_ok = NvAPI_GPU_GetThermalSettings(handle, 0, &thermal);
 
-	if (!nvapi_ok == NVAPI_OK) {
-		NvAPI_ShortString string;
-		NvAPI_GetErrorMessage(nvapi_ok, string);
-		printf("NVAPI NvAPI_GPU_GetThermalSettings: %s\n", string);
-		return 1;
-	}
+	if (nvapi_ok != NVAPI_OK) return 1;
  
 	*gpuTemperture = static_cast<unsigned>(thermal.sensor[0].currentTemp);
 
@@ -279,129 +388,52 @@ int ReadGPUTemperture(int* gpuTemperture)
 //-------------------------------------------------------------------------
 //  
 //-------------------------------------------------------------------------
-int ReadEcRaw(FCSTATE* pfcstate) {
+int ReadFanState(FCSTATE* state)
+{
+	int ok = 1;
+	ok = ReadEcStatus(state);
 
-	int ok;
-	pfcstate->FanCtrl = -1;
-
-	ok = ReadByteFromEC(TP_ECOFFSET_FAN, &pfcstate->FanCtrl);
-
-	ok = WriteByteToEC(TP_ECOFFSET_FAN_SWITCH, TP_ECOFFSET_FAN2);
-
-	if (ok)
-		ok = ReadByteFromEC(TP_ECOFFSET_FANSPEED, &pfcstate->FanSpeedLo2);
-	if (!ok) {
-		printf("failed to read FanSpeedLowByte 2 from EC");
-	}
-
-	if (ok)
-		ok = ReadByteFromEC(TP_ECOFFSET_FANSPEED + 1, &pfcstate->FanSpeedHi2);
-	if (!ok) {
-		printf("failed to read FanSpeedHighByte 2 from EC");
-	}
-
-	ok = WriteByteToEC(TP_ECOFFSET_FAN_SWITCH, TP_ECOFFSET_FAN1);
-
-	if (ok)
-		ok = ReadByteFromEC(TP_ECOFFSET_FANSPEED, &pfcstate->FanSpeedLo1);
-	if (!ok) {
-		printf("failed to read FanSpeedLowByte 1 from EC");
-	}
-
-	if (ok)
-		ok = ReadByteFromEC(TP_ECOFFSET_FANSPEED + 1, &pfcstate->FanSpeedHi1);
-	if (!ok) {
-		printf("failed to read FanSpeedHighByte 1 from EC");
-	}
+	// combine lo/hi byte
+	state->Fan1Speed = (short)(((state->FanSpeedHi1) & 0xFF) << 8 | (state->FanSpeedLo1) & 0xFF);
+	state->Fan2Speed = (short)(((state->FanSpeedHi2) & 0xFF) << 8 | (state->FanSpeedLo2) & 0xFF);
 
 	return 0;
-
-}
-
-
-//-------------------------------------------------------------------------
-//  
-//-------------------------------------------------------------------------
-int ReadEcStatus(FCSTATE* pfcstate) {
-
-	char ok = 0;
-
-	for (int i = 0; i < 3; i++) {
-		ok = ReadEcRaw(pfcstate);
-		if (ok)
-			break;
-		::Sleep(200);
-	}
-
-	return ok;
 }
 
 
 int main(void){
 
-	bool ok = false;
-	NvAPI_Status nvapi_ok = NVAPI_ERROR;
-	char FanCtrl = 0;
+	string cpuName;
+	string gpuName;
+	int cpuTemperture;
+	int gpuTemperture;
+	FCSTATE state;
 
-	for (int i = 0; i < 180; i++)
-	{
-		ok = OpenTVicPort();
-		if (ok) break;
-
-	::Sleep(1000);
-	}
-
-	for (int i = 0; i < 180; i++)
-	{
-		nvapi_ok = NvAPI_Initialize();
-
-		if (nvapi_ok != NVAPI_OK) {
-			NvAPI_ShortString error;
-			NvAPI_GetErrorMessage(nvapi_ok, error);
-			printf("NVAPI NvAPI_Initialize: %s \n", error);
-		}
-		else break;
-
-		::Sleep(1000);
-	}
-
-	SetHardAccess(true);
+	StartDevice();
 
 	if (TestHardAccess())
 	{
-
-		// Get CPU Name
-		char cpuName[49];
-		ReadCpuName(cpuName);
-		printf("%s \n", cpuName);
-
-		// Get GPU Name
-		NvU32 count;
-		NvPhysicalGpuHandle handle;
-		NvAPI_ShortString gpuName;
-		nvapi_ok = NvAPI_EnumPhysicalGPUs(&handle, &count);
-		nvapi_ok = NvAPI_GPU_GetFullName(handle, gpuName);
-
-		printf("%s \n", gpuName);
+		ReadCpuName(&cpuName);
+		ReadGpuName(&gpuName);
 
 		// manual: 0x00 - 0x07, bios auto: 0x80
-		SetFanStateLevel(0x80, 0x80);
+		SetFanStateLevel(0x07, 0x04);
 
-		FCSTATE state;
+		printf("%s | %s \n", cpuName.c_str(), gpuName.c_str());
 
 		while (true) {
 
-			char cpuTemperture;
-			int gpuTemperture;
+			ReadFanState(&state);
+			ReadCpuTemperture(&cpuTemperture);
+			ReadGpuTemperture(&gpuTemperture);
 
-			ok = ReadByteFromEC(TP_ECOFFSET_TEMP0, &cpuTemperture);
-			ok = ReadGPUTemperture(&gpuTemperture);
-			ok = ReadEcStatus(&state);
-
-			// combine lo/hi byte
-			short fanspeed1 = (short)(((state.FanSpeedHi1) & 0xFF) << 8 | (state.FanSpeedLo1) & 0xFF);
-			short fanspeed2 = (short)(((state.FanSpeedHi2) & 0xFF) << 8 | (state.FanSpeedLo2) & 0xFF);
-			printf("%d / %d / %d / %d \n", cpuTemperture, gpuTemperture, fanspeed1, fanspeed2);
+			printf("%d / %d / %d / %d / %d / %d \n", 
+				cpuTemperture, 
+				gpuTemperture, 
+				state.Fan1Speed, 
+				state.Fan2Speed,
+				state.Fan1StateLevel,
+				state.Fan2StateLevel);
 
 			::Sleep(200);
 
@@ -409,7 +441,9 @@ int main(void){
 
 	}
 
-	CloseTVicPort();
+	CloseDevice();
 
 	return 0;
 }
+
+

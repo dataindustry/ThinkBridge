@@ -156,6 +156,7 @@
     <ClInclude Include="lib\nvapi\nvapi_lite_stereo.h" />
     <ClInclude Include="lib\nvapi\nvapi_lite_surround.h" />
     <ClInclude Include="lib\TVicPort.h" />
+    <ClInclude Include="ThinkBridge.h" />
     <ClInclude Include="tools.h" />
     <ClInclude Include="_prec.h" />
   </ItemGroup>
