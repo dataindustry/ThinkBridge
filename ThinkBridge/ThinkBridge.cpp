@@ -429,7 +429,7 @@ int ReadCpuTemperture()
 int ReadGpuTemperture()
 {
 	int gpuTemperture;
-	ReadCpuTemperture(&gpuTemperture);
+	ReadGpuTemperture(&gpuTemperture);
 	return gpuTemperture;
 }
 

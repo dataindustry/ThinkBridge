@@ -5,24 +5,53 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:ThinkPadFanControl"
         mc:Ignorable="d"
-        Title="MainWindow" Height="450" Width="800">
+        Title="ThinkPad Fan Control" Height="450" Width="800">
     <Grid>
-
+        
         <Grid.ColumnDefinitions>
             <ColumnDefinition />
             <ColumnDefinition />
         </Grid.ColumnDefinitions>
+        
         <Grid.RowDefinitions>
             <RowDefinition />
             <RowDefinition />
             <RowDefinition />
+            <RowDefinition />
+            <RowDefinition />
+            <RowDefinition />
         </Grid.RowDefinitions>
-        <Label x:Name="lblCpuName" Grid.Row="0" Grid.Column="0" Content="Label" FontSize="40" />
-        <Label x:Name="lblGpuName" Grid.Row="0" Grid.Column="1" Content="Label" FontSize="40" />
-        <Label x:Name="lblCpuTemperture" Grid.Row="1" Grid.Column="0" Content="Label" FontSize="40" />
-        <Label x:Name="lblGpuTemperture" Grid.Row="1" Grid.Column="1" Content="Label" FontSize="40" />
-        <Label x:Name="lblFan1Speed" Grid.Row="2" Grid.Column="0" Content="Label" FontSize="40" />
-        <Label x:Name="lblFan2Speed" Grid.Row="2" Grid.Column="1" Content="Label" FontSize="40" />
+        
+        <Label x:Name="lblCpuName" Grid.Row="0" Grid.Column="0" Grid.ColumnSpan="2" FontSize="30" Content="{Binding Path=CpuName}" />
+        <Label x:Name="lblGpuName" Grid.Row="1" Grid.Column="0" Grid.ColumnSpan="2" FontSize="30" Content="{Binding Path=GpuName}" />
+        <Label x:Name="lblCpuTemperture" Grid.Row="2" Grid.Column="0" FontSize="40" Content="{Binding Path=CpuTemperture}" />
+        <Label x:Name="lblGpuTemperture" Grid.Row="2" Grid.Column="1" FontSize="40" Content="{Binding Path=GpuTemperture}" />
+        <Label x:Name="lblFan1Speed" Grid.Row="3" Grid.Column="0" FontSize="40" Content="{Binding Path=Fan1Speed}" />
+        <Label x:Name="lblFan2Speed" Grid.Row="3" Grid.Column="1" FontSize="40" Content="{Binding Path=Fan2Speed}" />
+        <ComboBox x:Name="cboFan1State" Grid.Row="4" Grid.Column="0" SelectedValuePath="Content" SelectedValue="{Binding Path=Fan1State}">
+            <ComboBoxItem Content="0x00" />
+            <ComboBoxItem Content="0x01" />
+            <ComboBoxItem Content="0x02" />
+            <ComboBoxItem Content="0x03" />
+            <ComboBoxItem Content="0x04" />
+            <ComboBoxItem Content="0x05" />
+            <ComboBoxItem Content="0x06" />
+            <ComboBoxItem Content="0x07" />
+            <ComboBoxItem Content="0x80" />
+        </ComboBox>
+        <ComboBox x:Name="cboFan2State" Grid.Row="4" Grid.Column="1" SelectedValuePath="Content" SelectedValue="{Binding Path=Fan2State}">
+            <ComboBoxItem Content="0x00" />
+            <ComboBoxItem Content="0x01" />
+            <ComboBoxItem Content="0x02" />
+            <ComboBoxItem Content="0x03" />
+            <ComboBoxItem Content="0x04" />
+            <ComboBoxItem Content="0x05" />
+            <ComboBoxItem Content="0x06" />
+            <ComboBoxItem Content="0x07" />
+            <ComboBoxItem Content="0x80" />
+        </ComboBox>
+        
+        <Button x:Name="btnApply" Grid.Row="5" Grid.Column="0" Grid.ColumnSpan="2" Content="Apply" Click="BtnApply_Click" />
 
     </Grid>
 </Window>

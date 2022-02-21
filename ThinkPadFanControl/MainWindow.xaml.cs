@@ -13,6 +13,9 @@ using System.Windows.Media.Imaging;
 using System.Windows.Navigation;
 using System.Windows.Shapes;
 using System.Runtime.InteropServices;
+using System.ComponentModel;
+using System.Windows.Threading;
+using System.Threading;
 
 namespace ThinkPadFanControl
 {
@@ -21,22 +24,41 @@ namespace ThinkPadFanControl
     /// </summary>
     public partial class MainWindow : Window
     {
+        MainWindowViewModel viewModel;
         public MainWindow()
         {
+            viewModel = new MainWindowViewModel();
+            DataContext = viewModel;
+
+            // SetFanStateLevel(0x80, 0x80);
+
+            new Thread(new ThreadStart(delegate
+            {
+
+                try
+                {
+                    StartDevice();
+
+                    while (true)
+                    {
+                        UpdateViewModel();
+                        // Thread.Sleep(100);
+                    }
+                }
+                catch(Exception ex)
+                {
+                    Console.WriteLine(ex.ToString());
+                }
+                finally {
+
+                    CloseDevice();
+                }
+
+
+            })).Start();
+
             InitializeComponent();
 
-            StartDevice();
-
-            SetFanStateLevel(0x80, 0x80);
-
-            string a = ReadCpuName();
-            string b = ReadGpuName();
-            int c = ReadCpuTemperture();
-            int d = ReadGpuTemperture();
-            int e = ReadFan1Speed();
-            int f = ReadFan2Speed();
-
-            CloseDevice();
         }
 
         [DllImport("ThinkBridge.dll")]
@@ -67,5 +89,37 @@ namespace ThinkPadFanControl
 
         [DllImport("ThinkBridge.dll")]
         public static extern int SetFanStateLevel(int Fan1StateLevel, int Fan2StateLevel);
+
+        private void UpdateViewModel() {
+
+            viewModel.CpuName = ReadCpuName();
+            viewModel.GpuName = ReadGpuName();
+            viewModel.CpuTemperture = ReadCpuTemperture();
+            viewModel.GpuTemperture = ReadGpuTemperture();
+            viewModel.Fan1Speed = ReadFan1Speed();
+            viewModel.Fan2Speed = ReadFan2Speed();
+
+        }
+
+        private void BtnApply_Click(object sender, RoutedEventArgs e)
+        {
+
+            new Thread(new ThreadStart(delegate
+            {
+
+                try
+                {
+                    SetFanStateLevel(
+                        Convert.ToInt32(viewModel.Fan1State, 16),
+                        Convert.ToInt32(viewModel.Fan2State, 16));
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine(ex.ToString());
+                }
+
+
+            })).Start();
+        }
     }
 }
