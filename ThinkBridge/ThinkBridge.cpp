@@ -2,6 +2,21 @@
 #include "lib/TVicPort.h"
 #include "lib/nvapi/nvapi.h"
 #include "ThinkBridge.h"
+#include <atlconv.h>
+
+
+//-------------------------------------------------------------------------
+// 
+//-------------------------------------------------------------------------
+BSTR convertCharToBSTR(char* input) {
+
+	USES_CONVERSION;
+	const OLECHAR* pOleChar = A2CW(input);
+	BSTR str = SysAllocString(pOleChar);
+	SysFreeString(str);
+
+	return str;
+}
 
 
 //-------------------------------------------------------------------------
@@ -243,10 +258,9 @@ int CloseDevice()
 //-------------------------------------------------------------------------
 //
 //-------------------------------------------------------------------------
-int ReadCpuName(string* cpuName)
-{
+BSTR ReadCpuName() {
 
-	char _cpuName[48] = {0};
+	char _cpuName[48] = { 0 };
 
 	const DWORD id = 0x80000002;
 
@@ -272,17 +286,14 @@ int ReadCpuName(string* cpuName)
 		memcpy(_cpuName + 16 * t + 12, &dedx, 4);
 	}
 
-	*cpuName = _cpuName;
 
-	return 0;
-
+	return convertCharToBSTR(_cpuName);
 }
-
 
 //-------------------------------------------------------------------------
 //
 //-------------------------------------------------------------------------
-int ReadGpuName(string *gpuName)
+BSTR ReadGpuName()
 {
 	NvAPI_Status nvapi_ok = NVAPI_ERROR;
 
@@ -295,14 +306,13 @@ int ReadGpuName(string *gpuName)
 	std::string a = "";
 
 	nvapi_ok = NvAPI_EnumPhysicalGPUs(&handle, &count);
-	if (nvapi_ok != NVAPI_OK) return 1;
+	if (nvapi_ok != NVAPI_OK) return NULL;
 
 	nvapi_ok = NvAPI_GPU_GetFullName(handle, _gpuName);
-	if (nvapi_ok != NVAPI_OK) return 1;
+	if (nvapi_ok != NVAPI_OK) return NULL;
 
-	*gpuName = _gpuName;
+	return convertCharToBSTR(_gpuName);
 
-	return 0;
 }
 
 
@@ -401,49 +411,40 @@ int ReadFanState(FCSTATE* state)
 }
 
 
-int main(void){
-
-	string cpuName;
-	string gpuName;
-	int cpuTemperture;
-	int gpuTemperture;
-	FCSTATE state;
-
-	StartDevice();
-
-	if (TestHardAccess())
-	{
-		ReadCpuName(&cpuName);
-		ReadGpuName(&gpuName);
-
-		// manual: 0x00 - 0x07, bios auto: 0x80
-		SetFanStateLevel(0x07, 0x04);
-
-		printf("%s | %s \n", cpuName.c_str(), gpuName.c_str());
-
-		while (true) {
-
-			ReadFanState(&state);
-			ReadCpuTemperture(&cpuTemperture);
-			ReadGpuTemperture(&gpuTemperture);
-
-			printf("%d / %d / %d / %d / %d / %d \n", 
-				cpuTemperture, 
-				gpuTemperture, 
-				state.Fan1Speed, 
-				state.Fan2Speed,
-				state.Fan1StateLevel,
-				state.Fan2StateLevel);
-
-			::Sleep(200);
-
-		}
-
-	}
-
-	CloseDevice();
-
+int main(void)
+{
 	return 0;
+}
+
+
+// interop warpper function
+int ReadCpuTemperture()
+{
+	int cpuTemperture;
+	ReadCpuTemperture(&cpuTemperture);
+	return cpuTemperture;
+}
+
+
+int ReadGpuTemperture()
+{
+	int gpuTemperture;
+	ReadCpuTemperture(&gpuTemperture);
+	return gpuTemperture;
+}
+
+
+int ReadFan1Speed() {
+	FCSTATE state;
+	ReadFanState(&state);
+	return state.Fan1Speed;
+}
+
+
+int ReadFan2Speed() {
+	FCSTATE state;
+	ReadFanState(&state);
+	return state.Fan2Speed;
 }
 
 

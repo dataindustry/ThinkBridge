@@ -1,5 +1,7 @@
 #include <string>
 using namespace std;
+#include <comutil.h>
+#include <CString>
 
 
 #pragma once
@@ -44,18 +46,20 @@ struct FCSTATE {
 		Fan2Speed;
 } State;
 
-__declspec(dllexport) int StartDevice();
+extern "C" __declspec(dllexport) int StartDevice();
 
-__declspec(dllexport) int CloseDevice();
+extern "C" __declspec(dllexport) int CloseDevice();
 
-__declspec(dllexport) int ReadCpuName(string* cpuName);
+extern "C" __declspec(dllexport) BSTR ReadCpuName();
 
-__declspec(dllexport) int ReadGpuName(string* gpuName);
+extern "C" __declspec(dllexport) BSTR ReadGpuName();
 
-__declspec(dllexport) int SetFanStateLevel(int fan1statelevel, int fan2statelevel);
+extern "C" __declspec(dllexport) int ReadCpuTemperture();
 
-__declspec(dllexport) int ReadCpuTemperture(int* cpuTemperture);
+extern "C" __declspec(dllexport) int ReadGpuTemperture();
 
-__declspec(dllexport) int ReadGpuTemperture(int* gpuTemperture);
+extern "C" __declspec(dllexport) int ReadFan1Speed();
 
-__declspec(dllexport) int ReadFanState(FCSTATE* state);
+extern "C" __declspec(dllexport) int ReadFan2Speed();
+
+extern "C" __declspec(dllexport) int SetFanStateLevel(int fan1statelevel, int fan2statelevel);

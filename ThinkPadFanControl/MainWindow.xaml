@@ -8,5 +8,21 @@
         Title="MainWindow" Height="450" Width="800">
     <Grid>
 
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition />
+            <ColumnDefinition />
+        </Grid.ColumnDefinitions>
+        <Grid.RowDefinitions>
+            <RowDefinition />
+            <RowDefinition />
+            <RowDefinition />
+        </Grid.RowDefinitions>
+        <Label x:Name="lblCpuName" Grid.Row="0" Grid.Column="0" Content="Label" FontSize="40" />
+        <Label x:Name="lblGpuName" Grid.Row="0" Grid.Column="1" Content="Label" FontSize="40" />
+        <Label x:Name="lblCpuTemperture" Grid.Row="1" Grid.Column="0" Content="Label" FontSize="40" />
+        <Label x:Name="lblGpuTemperture" Grid.Row="1" Grid.Column="1" Content="Label" FontSize="40" />
+        <Label x:Name="lblFan1Speed" Grid.Row="2" Grid.Column="0" Content="Label" FontSize="40" />
+        <Label x:Name="lblFan2Speed" Grid.Row="2" Grid.Column="1" Content="Label" FontSize="40" />
+
     </Grid>
 </Window>
