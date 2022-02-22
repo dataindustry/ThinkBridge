@@ -5,6 +5,7 @@ using System.Text;
 using System.Threading.Tasks;
 using System.ComponentModel;
 using System.Runtime.CompilerServices;
+using System.Collections.ObjectModel;
 
 namespace ThinkPadFanControl
 {
@@ -73,6 +74,50 @@ namespace ThinkPadFanControl
             get => fan2State;
             set => SetProperty(ref fan2State, value);
         }
+
+        public ObservableCollection<FanControlPoint>? fan1ControlPlan;
+
+        public ObservableCollection<FanControlPoint>? Fan1ControlPlan
+        {
+            get => fan1ControlPlan;
+            set => SetProperty(ref fan1ControlPlan, value);
+        }
+
+        public ObservableCollection<FanControlPoint>? fan2ControlPlan;
+        public ObservableCollection<FanControlPoint>? Fan2ControlPlan
+        {
+            get => fan2ControlPlan;
+            set => SetProperty(ref fan2ControlPlan, value);
+        }
+
+    }
+
+    internal class FanControlPoint : INotifyPropertyChanged
+
+    {
+
+        public int temperture;
+
+        public int Temperture
+        {
+            get => temperture;
+            set { temperture = value; OnPropertyChanged(nameof(Temperture)); }
+        }
+
+        public int fanState;
+
+        public int FanState
+        {
+            get => fanState;
+            set { fanState = value; OnPropertyChanged(nameof(FanState)); }
+        }
+        protected internal virtual void OnPropertyChanged(string propertyName)
+        {
+            if (PropertyChanged != null)
+                PropertyChanged(this, new PropertyChangedEventArgs(propertyName));
+        }
+        public event PropertyChangedEventHandler? PropertyChanged;
+
     }
 
 }

@@ -22,5 +22,6 @@ namespace ThinkPadFanControl
             }
             return false;
         }
+
     }
 }

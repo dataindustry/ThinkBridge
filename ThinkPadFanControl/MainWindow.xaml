@@ -3,10 +3,11 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:syncfusion="clr-namespace:Syncfusion.UI.Xaml.Charts;assembly=Syncfusion.SfChart.WPF"
         xmlns:local="clr-namespace:ThinkPadFanControl"
         mc:Ignorable="d"
-        Title="ThinkPad Fan Control" Height="450" Width="800">
-    <Grid>
+        Title="ThinkPad Fan Control" Height="800" Width="1000">
+    <Grid ShowGridLines="True">
         
         <Grid.ColumnDefinitions>
             <ColumnDefinition />
@@ -20,14 +21,15 @@
             <RowDefinition />
             <RowDefinition />
             <RowDefinition />
+            <RowDefinition Height="500" />
         </Grid.RowDefinitions>
         
         <Label x:Name="lblCpuName" Grid.Row="0" Grid.Column="0" Grid.ColumnSpan="2" FontSize="30" Content="{Binding Path=CpuName}" />
         <Label x:Name="lblGpuName" Grid.Row="1" Grid.Column="0" Grid.ColumnSpan="2" FontSize="30" Content="{Binding Path=GpuName}" />
-        <Label x:Name="lblCpuTemperture" Grid.Row="2" Grid.Column="0" FontSize="40" Content="{Binding Path=CpuTemperture}" />
-        <Label x:Name="lblGpuTemperture" Grid.Row="2" Grid.Column="1" FontSize="40" Content="{Binding Path=GpuTemperture}" />
-        <Label x:Name="lblFan1Speed" Grid.Row="3" Grid.Column="0" FontSize="40" Content="{Binding Path=Fan1Speed}" />
-        <Label x:Name="lblFan2Speed" Grid.Row="3" Grid.Column="1" FontSize="40" Content="{Binding Path=Fan2Speed}" />
+        <Label x:Name="lblCpuTemperture" Grid.Row="2" Grid.Column="0" FontSize="30" Content="{Binding Path=CpuTemperture}" />
+        <Label x:Name="lblGpuTemperture" Grid.Row="2" Grid.Column="1" FontSize="30" Content="{Binding Path=GpuTemperture}" />
+        <Label x:Name="lblFan1Speed" Grid.Row="3" Grid.Column="0" FontSize="30" Content="{Binding Path=Fan1Speed}" />
+        <Label x:Name="lblFan2Speed" Grid.Row="3" Grid.Column="1" FontSize="30" Content="{Binding Path=Fan2Speed}" />
         <ComboBox x:Name="cboFan1State" Grid.Row="4" Grid.Column="0" SelectedValuePath="Content" SelectedValue="{Binding Path=Fan1State}">
             <ComboBoxItem Content="0x00" />
             <ComboBoxItem Content="0x01" />
@@ -53,5 +55,74 @@
         
         <Button x:Name="btnApply" Grid.Row="5" Grid.Column="0" Grid.ColumnSpan="2" Content="Apply" Click="BtnApply_Click" />
 
+        <syncfusion:SfChart Margin="10" Grid.Row="6" Grid.Column="0">
+
+            <syncfusion:SfChart.PrimaryAxis>
+                <syncfusion:NumericalAxis Interval="10">
+                    <syncfusion:NumericalAxis.StripLines>
+                        <syncfusion:ChartStripLine Start="{Binding CpuTemperture}" Width="1" Background="Red" />
+                    </syncfusion:NumericalAxis.StripLines>
+                </syncfusion:NumericalAxis>
+            </syncfusion:SfChart.PrimaryAxis>
+
+            <syncfusion:SfChart.SecondaryAxis>
+                <syncfusion:NumericalAxis Interval="1">
+                    <syncfusion:NumericalAxis.CustomLabels>
+                        <syncfusion:ChartAxisLabel Position="0" LabelContent="0x00"/>
+                        <syncfusion:ChartAxisLabel Position="1" LabelContent="0x01"/>
+                        <syncfusion:ChartAxisLabel Position="2" LabelContent="0x02"/>
+                        <syncfusion:ChartAxisLabel Position="3" LabelContent="0x03"/>
+                        <syncfusion:ChartAxisLabel Position="4" LabelContent="0x04"/>
+                        <syncfusion:ChartAxisLabel Position="5" LabelContent="0x05"/>
+                        <syncfusion:ChartAxisLabel Position="6" LabelContent="0x06"/>
+                        <syncfusion:ChartAxisLabel Position="7" LabelContent="0x07"/>
+                    </syncfusion:NumericalAxis.CustomLabels>
+                </syncfusion:NumericalAxis>
+            </syncfusion:SfChart.SecondaryAxis>
+
+            <syncfusion:LineSeries Name="chartFan1Control"
+                                   EnableSegmentDragging="True"
+                                   ListenPropertyChange="True" 
+                                   UpdateSource="True"
+                XBindingPath="Temperture" YBindingPath="FanState" 
+                ItemsSource="{Binding Fan1ControlPlan}" DragEnd="ChartFan1Control_DragEnd" />
+
+        </syncfusion:SfChart>
+
+        <syncfusion:SfChart Margin="10" Grid.Row="6" Grid.Column="1">
+
+            <syncfusion:SfChart.PrimaryAxis>
+                <syncfusion:NumericalAxis Interval="10">
+                    <syncfusion:NumericalAxis.StripLines>
+                        <syncfusion:ChartStripLine Start="{Binding GpuTemperture}" Width="1" Background="Red" />
+                    </syncfusion:NumericalAxis.StripLines>
+                </syncfusion:NumericalAxis>
+            </syncfusion:SfChart.PrimaryAxis>
+
+            <syncfusion:SfChart.SecondaryAxis>
+                <syncfusion:NumericalAxis Interval="1">
+                    <syncfusion:NumericalAxis.CustomLabels>
+                        <syncfusion:ChartAxisLabel Position="0" LabelContent="0x00"/>
+                        <syncfusion:ChartAxisLabel Position="1" LabelContent="0x01"/>
+                        <syncfusion:ChartAxisLabel Position="2" LabelContent="0x02"/>
+                        <syncfusion:ChartAxisLabel Position="3" LabelContent="0x03"/>
+                        <syncfusion:ChartAxisLabel Position="4" LabelContent="0x04"/>
+                        <syncfusion:ChartAxisLabel Position="5" LabelContent="0x05"/>
+                        <syncfusion:ChartAxisLabel Position="6" LabelContent="0x06"/>
+                        <syncfusion:ChartAxisLabel Position="7" LabelContent="0x07"/>
+                    </syncfusion:NumericalAxis.CustomLabels>
+                </syncfusion:NumericalAxis>
+            </syncfusion:SfChart.SecondaryAxis>
+
+            <syncfusion:LineSeries Name="chartFan2Control"
+                                   ShowTrackballInfo="True"
+                                   EnableSegmentDragging="True"
+                                   ListenPropertyChange="True" 
+                                   UpdateSource="True"
+                XBindingPath="Temperture" YBindingPath="FanState" 
+                ItemsSource="{Binding Fan2ControlPlan}" DragEnd="ChartFan2Control_DragEnd" />
+
+        </syncfusion:SfChart>
+        
     </Grid>
 </Window>
