@@ -36,6 +36,9 @@ namespace ThinkPadFanControl
         public static extern string ReadGpuName();
 
         [DllImport("ThinkBridge.dll")]
-        public static extern int SetFanStateLevel(int Fan1StateLevel, int Fan2StateLevel);
+        public static extern int SetFan1State(int FanState);
+
+        [DllImport("ThinkBridge.dll")]
+        public static extern int SetFan2State(int FanState);
     }
 }

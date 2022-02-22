@@ -319,38 +319,35 @@ BSTR ReadGpuName()
 //-------------------------------------------------------------------------
 //
 //-------------------------------------------------------------------------
-int SetFanStateLevel(int fan1statelevel, int fan2statelevel)
+int SetFan1State(int fanstate)
 {
 	int ok = 0;
-
-	// int fan1_ok = 0;
-	// int fan2_ok = 0;
-
-	// char fanstate1 = 0;
-	// char fanstate2 = 0;
 
 	for (int i = 0; i < 5; i++) {
 
 		ok = WriteByteToEC(TP_ECOFFSET_FAN_SWITCH, TP_ECOFFSET_FAN1);
-		ok = WriteByteToEC(TP_ECOFFSET_FAN, fan1statelevel);
+		ok = WriteByteToEC(TP_ECOFFSET_FAN, fanstate);
 
 		::Sleep(100);
+	}
+
+	return 0;
+}
+
+
+//-------------------------------------------------------------------------
+//
+//-------------------------------------------------------------------------
+int SetFan2State(int fanstate)
+{
+	int ok = 0;
+
+	for (int i = 0; i < 5; i++) {
 
 		ok = WriteByteToEC(TP_ECOFFSET_FAN_SWITCH, TP_ECOFFSET_FAN2);
-		ok = WriteByteToEC(TP_ECOFFSET_FAN, fan2statelevel);
+		ok = WriteByteToEC(TP_ECOFFSET_FAN, fanstate);
 
 		::Sleep(100);
-
-		// verify completion of fan2
-		// fan2_ok = ReadByteFromEC(TP_ECOFFSET_FAN, &fanstate2);
-
-		// ::Sleep(100);
-
-		// verify completion of fan1
-		// ok = WriteByteToEC(TP_ECOFFSET_FAN_SWITCH, TP_ECOFFSET_FAN1);
-		// fan1_ok = ReadByteFromEC(TP_ECOFFSET_FAN, &fanstate2);
-
-		// ::Sleep(300);
 	}
 
 	return 0;

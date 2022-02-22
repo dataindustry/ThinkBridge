@@ -33,6 +33,10 @@ namespace ThinkPadFanControl
         private readonly String licenseKey =
             "NTg1NDA1QDMxMzkyZTM0MmUzMFRXQWxXME1naDN6MktNR2FQKzVjaWZDdGxGZ1NrdGpSSHlkdHN3Sy8ybFU9";
 
+        bool isCurveControl = false;
+        bool isManualControl = false;
+        bool isECControl = false;
+
         public MainWindow()
         {
             SyncfusionLicenseProvider.RegisterLicense(licenseKey);
@@ -102,44 +106,32 @@ namespace ThinkPadFanControl
         private void CurveControl()
         {
             int fan1State = 0;
-            for (int i = 0; i < viewModel.fan1ControlPlan.Count - 1; i++)
+            var plan = viewModel.Fan1ControlPlan;
+            if (!isCurveControl || plan == null) return;
+
+            for (int i = 0; i < plan.Count - 1; i++)
             {
-                if (viewModel.CpuTemperture > viewModel.fan1ControlPlan[i].Temperture) {
-                    fan1State = viewModel.fan1ControlPlan[i + 1].FanState;
+                if (viewModel.CpuTemperture > plan[i].Temperture) {
+                    fan1State = plan[i + 1].FanState;
                 }
             }
 
             int fan2State = 0;
-            for (int i = 0; i < viewModel.fan2ControlPlan.Count - 1; i++)
+            plan = viewModel.Fan2ControlPlan;
+            if (!isCurveControl || plan == null) return;
+
+            for (int i = 0; i < plan.Count - 1; i++)
             {
-                if (viewModel.GpuTemperture > viewModel.fan2ControlPlan[i].Temperture)
+                if (viewModel.GpuTemperture > plan[i].Temperture)
                 {
-                    fan2State = viewModel.fan2ControlPlan[i + 1].FanState;
+                    fan2State = plan[i + 1].FanState;
                 }
             }
 
-            SetFanStateLevel(fan1State, fan2State);
+            SetFan1State(fan1State);
+            SetFan2State(fan2State);
         }
 
-        private void ManualControl()
-        {
-            new Thread(new ThreadStart(delegate
-            {
-
-                try
-                {
-                    SetFanStateLevel(
-                        Convert.ToInt32(viewModel.Fan1State, 16),
-                        Convert.ToInt32(viewModel.Fan2State, 16));
-                }
-                catch (Exception ex)
-                {
-                    Console.WriteLine(ex.ToString());
-                }
-
-
-            })).Start();
-        }
 
         private static ObservableCollection<FanControlPoint> InitializeChart()
         {
@@ -159,7 +151,27 @@ namespace ThinkPadFanControl
             };
         }
 
-        private void BtnApply_Click(object sender, RoutedEventArgs e)
+        private void BtnECControl_Click(object sender, RoutedEventArgs e)
+        {
+            new Thread(new ThreadStart(delegate
+            {
+
+                try
+                {
+                    SetFan1State(0x80);
+                    SetFan2State(0x80);
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine(ex.ToString());
+                }
+
+
+            })).Start();
+        }
+
+
+        private void BtnManualControl_Click(object sender, RoutedEventArgs e)
         {
 
             new Thread(new ThreadStart(delegate
@@ -167,9 +179,8 @@ namespace ThinkPadFanControl
 
                 try
                 {
-                    SetFanStateLevel(
-                        Convert.ToInt32(viewModel.Fan1State, 16),
-                        Convert.ToInt32(viewModel.Fan2State, 16));
+                    SetFan1State(Convert.ToInt32(viewModel.Fan1State, 16));
+                    SetFan2State(Convert.ToInt32(viewModel.Fan2State, 16));
                 }
                 catch (Exception ex)
                 {
@@ -201,5 +212,6 @@ namespace ThinkPadFanControl
                 }
             }
         }
+
     }
 }

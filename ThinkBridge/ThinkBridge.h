@@ -1,10 +1,8 @@
 #include <string>
 using namespace std;
 #include <comutil.h>
-#include <CString>
 
 
-#pragma once
 DWORD deax, debx, decx, dedx;
 
 
@@ -62,4 +60,6 @@ extern "C" __declspec(dllexport) int ReadFan1Speed();
 
 extern "C" __declspec(dllexport) int ReadFan2Speed();
 
-extern "C" __declspec(dllexport) int SetFanStateLevel(int fan1statelevel, int fan2statelevel);
+extern "C" __declspec(dllexport) int SetFan1State(int fanState);
+
+extern "C" __declspec(dllexport) int SetFan2State(int fanState);

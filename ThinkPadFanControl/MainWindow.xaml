@@ -21,41 +21,50 @@
             <RowDefinition />
             <RowDefinition />
             <RowDefinition />
+            <RowDefinition />
+            <RowDefinition />
             <RowDefinition Height="500" />
         </Grid.RowDefinitions>
-        
-        <Label x:Name="lblCpuName" Grid.Row="0" Grid.Column="0" Grid.ColumnSpan="2" FontSize="30" Content="{Binding Path=CpuName}" />
-        <Label x:Name="lblGpuName" Grid.Row="1" Grid.Column="0" Grid.ColumnSpan="2" FontSize="30" Content="{Binding Path=GpuName}" />
-        <Label x:Name="lblCpuTemperture" Grid.Row="2" Grid.Column="0" FontSize="30" Content="{Binding Path=CpuTemperture}" />
-        <Label x:Name="lblGpuTemperture" Grid.Row="2" Grid.Column="1" FontSize="30" Content="{Binding Path=GpuTemperture}" />
-        <Label x:Name="lblFan1Speed" Grid.Row="3" Grid.Column="0" FontSize="30" Content="{Binding Path=Fan1Speed}" />
-        <Label x:Name="lblFan2Speed" Grid.Row="3" Grid.Column="1" FontSize="30" Content="{Binding Path=Fan2Speed}" />
-        <ComboBox x:Name="cboFan1State" Grid.Row="4" Grid.Column="0" SelectedValuePath="Content" SelectedValue="{Binding Path=Fan1State}">
-            <ComboBoxItem Content="0x00" />
-            <ComboBoxItem Content="0x01" />
-            <ComboBoxItem Content="0x02" />
-            <ComboBoxItem Content="0x03" />
-            <ComboBoxItem Content="0x04" />
-            <ComboBoxItem Content="0x05" />
-            <ComboBoxItem Content="0x06" />
-            <ComboBoxItem Content="0x07" />
-            <ComboBoxItem Content="0x80" />
-        </ComboBox>
-        <ComboBox x:Name="cboFan2State" Grid.Row="4" Grid.Column="1" SelectedValuePath="Content" SelectedValue="{Binding Path=Fan2State}">
-            <ComboBoxItem Content="0x00" />
-            <ComboBoxItem Content="0x01" />
-            <ComboBoxItem Content="0x02" />
-            <ComboBoxItem Content="0x03" />
-            <ComboBoxItem Content="0x04" />
-            <ComboBoxItem Content="0x05" />
-            <ComboBoxItem Content="0x06" />
-            <ComboBoxItem Content="0x07" />
-            <ComboBoxItem Content="0x80" />
-        </ComboBox>
-        
-        <Button x:Name="btnApply" Grid.Row="5" Grid.Column="0" Grid.ColumnSpan="2" Content="Apply" Click="BtnApply_Click" />
 
-        <syncfusion:SfChart Margin="10" Grid.Row="6" Grid.Column="0">
+        <Button x:Name="btnHidden" Grid.Row="0" Grid.Column="0" Grid.ColumnSpan="2" Content="HIDDEN(TODO)" />
+        <GroupBox Grid.Row="1" Grid.Column="0" Grid.ColumnSpan="2">
+            <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" VerticalAlignment="Center">
+                <RadioButton GroupName="fancontroller">EC Control(TODO)</RadioButton>
+                <RadioButton GroupName="fancontroller">Manual Control(TODO)</RadioButton>
+                <RadioButton GroupName="fancontroller">Curve Control(TODO)</RadioButton>
+            </StackPanel>
+        </GroupBox>
+        <Label x:Name="lblCpuName" Grid.Row="2" Grid.Column="0" FontSize="20" Content="{Binding Path=CpuName}" />
+        <Label x:Name="lblGpuName" Grid.Row="2" Grid.Column="1" FontSize="20" Content="{Binding Path=GpuName}" />
+        <Label x:Name="lblCpuTemperture" Grid.Row="3" Grid.Column="0" FontSize="20" Content="{Binding Path=CpuTemperture}" />
+        <Label x:Name="lblGpuTemperture" Grid.Row="3" Grid.Column="1" FontSize="20" Content="{Binding Path=GpuTemperture}" />
+        <Label x:Name="lblFan1Speed" Grid.Row="4" Grid.Column="0" FontSize="20" Content="{Binding Path=Fan1Speed}" />
+        <Label x:Name="lblFan2Speed" Grid.Row="4" Grid.Column="1" FontSize="20" Content="{Binding Path=Fan2Speed}" />
+        <Button x:Name="btnECControl" Grid.Row="5" Grid.Column="0" Grid.ColumnSpan="2" Content="EC Control" Click="BtnECControl_Click" />
+        <ComboBox x:Name="cboFan1State" Grid.Row="6" Grid.Column="0" SelectedValuePath="Content" SelectedValue="{Binding Path=Fan1State}">
+            <ComboBoxItem Content="0x00" />
+            <ComboBoxItem Content="0x01" />
+            <ComboBoxItem Content="0x02" />
+            <ComboBoxItem Content="0x03" />
+            <ComboBoxItem Content="0x04" />
+            <ComboBoxItem Content="0x05" />
+            <ComboBoxItem Content="0x06" />
+            <ComboBoxItem Content="0x07" />
+            <ComboBoxItem Content="0x80" />
+        </ComboBox>
+        <ComboBox x:Name="cboFan2State" Grid.Row="6" Grid.Column="1" SelectedValuePath="Content" SelectedValue="{Binding Path=Fan2State}">
+            <ComboBoxItem Content="0x00" />
+            <ComboBoxItem Content="0x01" />
+            <ComboBoxItem Content="0x02" />
+            <ComboBoxItem Content="0x03" />
+            <ComboBoxItem Content="0x04" />
+            <ComboBoxItem Content="0x05" />
+            <ComboBoxItem Content="0x06" />
+            <ComboBoxItem Content="0x07" />
+            <ComboBoxItem Content="0x80" />
+        </ComboBox>
+        <Button x:Name="btnManualControl" Grid.Row="7" Grid.Column="0" Grid.ColumnSpan="2" Content="Manual Control" Click="BtnManualControl_Click" />
+        <syncfusion:SfChart Margin="10" Grid.Row="8" Grid.Column="0">
 
             <syncfusion:SfChart.PrimaryAxis>
                 <syncfusion:NumericalAxis Interval="10">
@@ -88,8 +97,7 @@
                 ItemsSource="{Binding Fan1ControlPlan}" DragEnd="ChartFan1Control_DragEnd" />
 
         </syncfusion:SfChart>
-
-        <syncfusion:SfChart Margin="10" Grid.Row="6" Grid.Column="1">
+        <syncfusion:SfChart Margin="10" Grid.Row="8" Grid.Column="1">
 
             <syncfusion:SfChart.PrimaryAxis>
                 <syncfusion:NumericalAxis Interval="10">
