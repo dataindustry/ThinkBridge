@@ -75,6 +75,27 @@ namespace ThinkPadFanControl
             set => SetProperty(ref fan2State, value);
         }
 
+        public bool isECControl;
+        public bool IsECControl
+        {
+            get => isECControl;
+            set => SetProperty(ref isECControl, value);
+        }
+
+        public bool isManualControl;
+        public bool IsManualControl
+        {
+            get => isManualControl;
+            set => SetProperty(ref isManualControl, value);
+        }
+
+        public bool isCurveControl;
+        public bool IsCurveControl
+        {
+            get => isCurveControl;
+            set => SetProperty(ref isCurveControl, value);
+        }
+
         public ObservableCollection<FanControlPoint>? fan1ControlPlan;
 
         public ObservableCollection<FanControlPoint>? Fan1ControlPlan

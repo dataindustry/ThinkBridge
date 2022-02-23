@@ -20,6 +20,8 @@ using Syncfusion.Licensing;
 using System.Collections.ObjectModel;
 
 using static ThinkPadFanControl.PortIO;
+using System.Windows.Forms;
+using System.Drawing;
 
 namespace ThinkPadFanControl
 {
@@ -30,24 +32,26 @@ namespace ThinkPadFanControl
     {
         MainWindowViewModel viewModel;
 
+        NotifyIcon icon;
+
         private readonly String licenseKey =
             "NTg1NDA1QDMxMzkyZTM0MmUzMFRXQWxXME1naDN6MktNR2FQKzVjaWZDdGxGZ1NrdGpSSHlkdHN3Sy8ybFU9";
-
-        bool isCurveControl = false;
-        bool isManualControl = false;
-        bool isECControl = false;
 
         public MainWindow()
         {
             SyncfusionLicenseProvider.RegisterLicense(licenseKey);
 
-            viewModel = new MainWindowViewModel();
-            viewModel.Fan1ControlPlan = InitializeChart();
-            viewModel.Fan2ControlPlan = InitializeChart();
+            viewModel = new MainWindowViewModel
+            {
+                Fan1ControlPlan = InitializeChart(),
+                Fan2ControlPlan = InitializeChart(),
+                IsECControl = true
+            };
             DataContext = viewModel;
 
             StartDevice();
 
+            // enable temperture and fan speed monitoring
             new Thread(new ThreadStart(delegate
             {
 
@@ -64,9 +68,9 @@ namespace ThinkPadFanControl
                     Console.WriteLine(ex.ToString());
                 }
 
-
             })).Start();
 
+            // enable curve control
             new Thread(new ThreadStart(delegate
             {
 
@@ -84,6 +88,38 @@ namespace ThinkPadFanControl
                     Console.WriteLine(ex.ToString());
                 }
 
+
+            })).Start();
+
+            // enable notify icon
+            InitializeNotifyIcon();
+            new Thread(new ThreadStart(delegate
+            {
+
+                try
+                {
+
+                    while (true)
+                    {
+                        if (icon is not null && icon.Icon is not null)
+                        {
+                            if (viewModel.CpuTemperture > viewModel.GpuTemperture)
+                            {
+                                icon.Icon = CreateIcon(viewModel.CpuTemperture, "CPU");
+                            }
+                            else
+                            {
+                                icon.Icon = CreateIcon(viewModel.GpuTemperture, "GPU");
+                            }
+
+                        }
+                        Thread.Sleep(1000);
+                    }
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine(ex.ToString());
+                }
 
             })).Start();
 
@@ -105,9 +141,10 @@ namespace ThinkPadFanControl
 
         private void CurveControl()
         {
+            if (viewModel.IsCurveControl == false) return;
+
             int fan1State = 0;
             var plan = viewModel.Fan1ControlPlan;
-            if (!isCurveControl || plan == null) return;
 
             for (int i = 0; i < plan.Count - 1; i++)
             {
@@ -118,7 +155,6 @@ namespace ThinkPadFanControl
 
             int fan2State = 0;
             plan = viewModel.Fan2ControlPlan;
-            if (!isCurveControl || plan == null) return;
 
             for (int i = 0; i < plan.Count - 1; i++)
             {
@@ -132,6 +168,84 @@ namespace ThinkPadFanControl
             SetFan2State(fan2State);
         }
 
+        private void InitializeNotifyIcon()
+        {
+
+            icon = new NotifyIcon
+            {
+                Icon = CreateIcon(temperture: 0, ""),
+                Visible = true
+            };
+
+            ContextMenuStrip menu = new();
+
+            ToolStripItem ECControlItem = new ToolStripMenuItem
+            {
+                Text = "EC Control"
+            };
+            ECControlItem.Click += delegate
+            {
+                // switch to ec control
+            };
+
+            ToolStripItem ManualControlItem = new ToolStripMenuItem
+            {
+                Text = "Manual Control"
+            };
+            ManualControlItem.Click += delegate
+            {
+                // switch to manual control
+            };
+
+            ToolStripItem CurveControlProfile1Item = new ToolStripMenuItem
+            {
+                Text = "Curve Control Profile 1"
+            };
+            CurveControlProfile1Item.Click += delegate
+            {
+                // switch to curve control
+            };
+
+            ToolStripItem CurveControlProfile2Item = new ToolStripMenuItem
+            {
+                Text = "Curve Control Profile 2"
+            };
+            CurveControlProfile2Item.Click += delegate
+            {
+                // switch to curve control
+            };
+
+            ToolStripItem CurveControlProfile3Item = new ToolStripMenuItem
+            {
+                Text = "Curve Control Profile 3"
+            };
+            CurveControlProfile3Item.Click += delegate
+            {
+                // switch to curve control
+            };
+
+            menu.Items.Add(ECControlItem);
+            menu.Items.Add(ManualControlItem);
+            menu.Items.Add(CurveControlProfile1Item);
+            menu.Items.Add(CurveControlProfile2Item);
+            menu.Items.Add(CurveControlProfile3Item);
+
+            icon.ContextMenuStrip = menu;
+            icon.MouseClick += delegate
+            {
+                this.Visibility = Visibility.Visible;
+            };
+        }
+
+        private static Icon CreateIcon(int temperture, string type)
+        {
+
+            Bitmap bitmap = new(96, 96);
+            Graphics g = Graphics.FromImage(bitmap);
+            g.DrawString(temperture + "\n" + type, new Font("Tahoma", 13), System.Drawing.Brushes.White, new PointF(0, 0));
+            Icon icon = System.Drawing.Icon.FromHandle(bitmap.GetHicon());
+            return icon;
+        }
 
         private static ObservableCollection<FanControlPoint> InitializeChart()
         {
@@ -153,6 +267,10 @@ namespace ThinkPadFanControl
 
         private void BtnECControl_Click(object sender, RoutedEventArgs e)
         {
+            viewModel.IsECControl = true;
+            viewModel.IsCurveControl = false;
+            viewModel.IsManualControl = false;
+
             new Thread(new ThreadStart(delegate
             {
 
@@ -160,27 +278,6 @@ namespace ThinkPadFanControl
                 {
                     SetFan1State(0x80);
                     SetFan2State(0x80);
-                }
-                catch (Exception ex)
-                {
-                    Console.WriteLine(ex.ToString());
-                }
-
-
-            })).Start();
-        }
-
-
-        private void BtnManualControl_Click(object sender, RoutedEventArgs e)
-        {
-
-            new Thread(new ThreadStart(delegate
-            {
-
-                try
-                {
-                    SetFan1State(Convert.ToInt32(viewModel.Fan1State, 16));
-                    SetFan2State(Convert.ToInt32(viewModel.Fan2State, 16));
                 }
                 catch (Exception ex)
                 {
@@ -213,5 +310,64 @@ namespace ThinkPadFanControl
             }
         }
 
+        private void Window_Closed(object sender, EventArgs e)
+        {
+            CloseDevice();
+        }
+
+        private void BtnExit_Click(object sender, RoutedEventArgs e)
+        {
+            icon.Dispose();
+            // Environment.Exit(0);
+            System.Windows.Application.Current.Shutdown();
+
+        }
+
+        private void BtnHide_Click(object sender, RoutedEventArgs e)
+        {
+            this.Visibility = Visibility.Hidden;
+        }
+
+        private void CboFan1State_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        {
+
+            if (viewModel.IsManualControl == false) return;
+
+            new Thread(new ThreadStart(delegate
+            {
+
+                try
+                {
+                    SetFan1State(Convert.ToInt32(viewModel.Fan1State, 16));
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine(ex.ToString());
+                }
+
+
+            })).Start();
+        }
+
+        private void CboFan2State_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        {
+
+            if (viewModel.IsManualControl == false) return;
+
+            new Thread(new ThreadStart(delegate
+            {
+
+                try
+                {
+                    SetFan2State(Convert.ToInt32(viewModel.Fan2State, 16));
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine(ex.ToString());
+                }
+
+
+            })).Start();
+        }
     }
 }
