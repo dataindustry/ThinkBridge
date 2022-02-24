@@ -7,28 +7,18 @@
         xmlns:local="clr-namespace:ThinkPadFanControl"
         mc:Ignorable="d"
         Title="ThinkPad Fan Control"
-        ResizeMode="NoResize" 
+        ResizeMode="CanMinimize" 
         SizeToContent="WidthAndHeight" 
         WindowStartupLocation="CenterScreen" 
-        WindowStyle="None"
+        WindowStyle="ThreeDBorderWindow"
+        StateChanged="Window_StateChanged"
         Closed="Window_Closed">
+    <Window.Resources>
+        <local:ChartProfileConverter x:Key="ChartProfileConverter" />
+    </Window.Resources>
     <StackPanel Orientation="Vertical">
 
-        <Grid Margin="10,10,10,0">
-            <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="150" />
-                <ColumnDefinition />
-                <ColumnDefinition Width="150" />
-            </Grid.ColumnDefinitions>
-            <Grid.RowDefinitions>
-                <RowDefinition />
-            </Grid.RowDefinitions>
-            <Label Grid.Row="0" Grid.Column="0" HorizontalAlignment="Center" VerticalAlignment="Center" Content="ThinkPad Fan Control" />
-            <Button Grid.Row="0" Grid.Column="1" HorizontalAlignment="Stretch" VerticalAlignment="Center" x:Name="BtnHide" Content="HIDE" Click="BtnHide_Click" />
-            <Button Grid.Row="0" Grid.Column="2" HorizontalAlignment="Stretch" VerticalAlignment="Center" x:Name="BtnExit" Content="EXIT" Click="BtnExit_Click" />
-        </Grid>
-
-        <Border Margin="0,10,0,0" Padding="10" Background="#FFFF7777" >
+        <Border Margin="0,0,0,10" Padding="10" Background="{Binding ColorMeteor}" >
             <Grid>
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition />
@@ -78,7 +68,7 @@
             </Grid>
         </Border>
 
-        <Border Margin="10,10,10,0" Padding="0" CornerRadius="4">
+        <Border Margin="10,0,10,10" Padding="0" CornerRadius="4">
             <Grid>
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="40" />
@@ -96,8 +86,11 @@
                 <Label Grid.Row="0" Grid.Column="0" HorizontalAlignment="Center" VerticalAlignment="Center" Content="BIOS" />
                 <Button Margin="10" x:Name="BtnECControl" Grid.Row="0" Grid.Column="1" Grid.ColumnSpan="3" Content="EC Control" Click="BtnECControl_Click" />
 
-                <RadioButton HorizontalAlignment="Center" VerticalAlignment="Center" GroupName="fancontrol" Grid.Row="1" Grid.Column="0" IsChecked="{Binding IsManualControl}" />
-                <ComboBox Margin="10" x:Name="CboFan1State" Grid.Row="1" Grid.Column="1" SelectedValuePath="Content" SelectedValue="{Binding Path=Fan1State}" SelectionChanged="CboFan1State_SelectionChanged">
+                <RadioButton x:Name="RbnManualControl" HorizontalAlignment="Center" VerticalAlignment="Center" GroupName="fancontrol" Grid.Row="1" Grid.Column="0" IsChecked="{Binding IsManualControl}" />
+                <ComboBox Margin="10" x:Name="CboFan1State" Grid.Row="1" Grid.Column="1" SelectedValuePath="Content" 
+                          SelectedValue="{Binding Path=Fan1State}" 
+                          IsEnabled="{Binding IsManualControl}"
+                          SelectionChanged="CboFan1State_SelectionChanged" >
                     <ComboBoxItem Content="0x00" />
                     <ComboBoxItem Content="0x01" />
                     <ComboBoxItem Content="0x02" />
@@ -107,8 +100,8 @@
                     <ComboBoxItem Content="0x06" />
                     <ComboBoxItem Content="0x07" />
                 </ComboBox>
-                <CheckBox HorizontalAlignment="Center" VerticalAlignment="Center" Grid.Row="1" Grid.Column="2" />
-                <ComboBox Margin="10" x:Name="CboFan2State" Grid.Row="1" Grid.Column="3" SelectedValuePath="Content" SelectedValue="{Binding Path=Fan2State}" SelectionChanged="CboFan2State_SelectionChanged">
+                <CheckBox Name="CbManualControlSync" HorizontalAlignment="Center" VerticalAlignment="Center" Grid.Row="1" Grid.Column="2" IsChecked="{Binding IsManualControlSync}" IsEnabled="{Binding IsManualControl}" />
+                <ComboBox Margin="10" x:Name="CboFan2State" Grid.Row="1" Grid.Column="3" SelectedValuePath="Content" SelectedValue="{Binding Path=Fan2State}" IsEnabled="{Binding IsManualControl}" SelectionChanged="CboFan2State_SelectionChanged">
                     <ComboBoxItem Content="0x00" />
                     <ComboBoxItem Content="0x01" />
                     <ComboBoxItem Content="0x02" />
@@ -119,8 +112,8 @@
                     <ComboBoxItem Content="0x07" />
                 </ComboBox>
 
-                <RadioButton HorizontalAlignment="Center" VerticalAlignment="Center" GroupName="fancontrol" Grid.Row="2" Grid.Column="0" IsChecked="{Binding IsCurveControl}" />
-                <syncfusion:SfChart Margin="10" Height="400" Width="400" Grid.Row="2" Grid.Column="1">
+                <RadioButton Name="RbnCurveControl" HorizontalAlignment="Center" VerticalAlignment="Center" GroupName="fancontrol" Grid.Row="2" Grid.Column="0" IsChecked="{Binding IsCurveControl}" />
+                <syncfusion:SfChart Name="ChtFan1State" Margin="10" Height="400" Width="400" Grid.Row="2" Grid.Column="1" IsEnabled="{Binding IsCurveControl}">
 
                     <syncfusion:SfChart.PrimaryAxis>
                         <syncfusion:NumericalAxis Interval="10">
@@ -149,12 +142,20 @@
                                    EnableSegmentDragging="True"
                                    ListenPropertyChange="True" 
                                    UpdateSource="True"
-                XBindingPath="Temperture" YBindingPath="FanState" 
-                ItemsSource="{Binding Fan1ControlPlan}" DragEnd="ChartFan1Control_DragEnd" />
-
+                                   XBindingPath="Temperture" YBindingPath="FanState"
+                                   DragEnd="ChartFan1Control_DragEnd" >
+                        <syncfusion:LineSeries.ItemsSource>
+                            <MultiBinding Converter="{StaticResource ChartProfileConverter}">
+                                <Binding Path="Fan1ControlPlan"/>
+                                <Binding Path="Profile"/>
+                            </MultiBinding>
+                        </syncfusion:LineSeries.ItemsSource>
+                    </syncfusion:LineSeries>
                 </syncfusion:SfChart>
-                <CheckBox HorizontalAlignment="Center" VerticalAlignment="Center" Grid.Row="2" Grid.Column="2" />
-                <syncfusion:SfChart Margin="10" Height="400" Width="400" Grid.Row="2" Grid.Column="3">
+
+                <CheckBox x:Name="CbCurveControlSync" HorizontalAlignment="Center" VerticalAlignment="Center" Grid.Row="2" Grid.Column="2" IsChecked="{Binding IsCurveControlSync}" IsEnabled="{Binding IsCurveControl}" />
+
+                <syncfusion:SfChart Name="ChtFan2State" Margin="10" Height="400" Width="400" Grid.Row="2" Grid.Column="3" IsEnabled="{Binding IsCurveControl}">
 
                     <syncfusion:SfChart.PrimaryAxis>
                         <syncfusion:NumericalAxis Interval="10">
@@ -184,15 +185,21 @@
                                    EnableSegmentDragging="True"
                                    ListenPropertyChange="True" 
                                    UpdateSource="True"
-                XBindingPath="Temperture" YBindingPath="FanState" 
-                ItemsSource="{Binding Fan2ControlPlan}" DragEnd="ChartFan2Control_DragEnd" />
-
+                                   XBindingPath="Temperture" YBindingPath="FanState" DragEnd="ChartFan2Control_DragEnd" >
+                        <syncfusion:LineSeries.ItemsSource>
+                            <MultiBinding Converter="{StaticResource ChartProfileConverter}">
+                                <Binding Path="Fan2ControlPlan"/>
+                                <Binding Path="Profile"/>
+                            </MultiBinding>
+                        </syncfusion:LineSeries.ItemsSource>
+                    </syncfusion:LineSeries>
+                    
                 </syncfusion:SfChart>
 
             </Grid>
         </Border>
 
-        <Grid Margin="10,10,10,10">
+        <Grid Margin="10,0,10,10">
             <Grid.ColumnDefinitions>
                 <ColumnDefinition />
                 <ColumnDefinition />
@@ -201,9 +208,9 @@
             <Grid.RowDefinitions>
                 <RowDefinition />
             </Grid.RowDefinitions>
-            <Button Content="Profile 1" Grid.Column="0" Grid.Row="0" />
-            <Button Content="Profile 2" Grid.Column="1" Grid.Row="0" />
-            <Button Content="Profile 3" Grid.Column="2" Grid.Row="0" />
+            <Button x:Name="BtnProfile1" Content="Profile 1" Grid.Column="0" Grid.Row="0" IsEnabled="{Binding IsProfile1Enabled}" Click="BtnProfile1_Click" />
+            <Button x:Name="BtnProfile2"  Content="Profile 2" Grid.Column="1" Grid.Row="0" IsEnabled="{Binding IsProfile2Enabled}" Click="BtnProfile2_Click" />
+            <Button x:Name="BtnProfile3" Content="Profile 3" Grid.Column="2" Grid.Row="0" IsEnabled="{Binding IsProfile3Enabled}" Click="BtnProfile3_Click" />
         </Grid>
 
     </StackPanel>

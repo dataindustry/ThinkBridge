@@ -22,6 +22,9 @@ using System.Collections.ObjectModel;
 using static ThinkPadFanControl.PortIO;
 using System.Windows.Forms;
 using System.Drawing;
+using Brushes = System.Windows.Media.Brushes;
+using Newtonsoft.Json;
+using System.IO;
 
 namespace ThinkPadFanControl
 {
@@ -30,23 +33,34 @@ namespace ThinkPadFanControl
     /// </summary>
     public partial class MainWindow : Window
     {
-        MainWindowViewModel viewModel;
-
-        NotifyIcon icon;
+        private MainWindowViewModel viewModel;
 
         private readonly String licenseKey =
             "NTg1NDA1QDMxMzkyZTM0MmUzMFRXQWxXME1naDN6MktNR2FQKzVjaWZDdGxGZ1NrdGpSSHlkdHN3Sy8ybFU9";
+
+        private readonly string ini = System.IO.Path.Combine(Environment.CurrentDirectory, "ThinkPadFanControl.json");
+
+        NotifyIcon icon;
 
         public MainWindow()
         {
             SyncfusionLicenseProvider.RegisterLicense(licenseKey);
 
-            viewModel = new MainWindowViewModel
+            if (File.Exists(ini))
             {
-                Fan1ControlPlan = InitializeChart(),
-                Fan2ControlPlan = InitializeChart(),
-                IsECControl = true
-            };
+                viewModel = JsonConvert.DeserializeObject<MainWindowViewModel>(File.ReadAllText(ini));
+            }
+            else
+            {
+                viewModel = new MainWindowViewModel
+                {
+                    Fan1ControlPlan = InitializeChart(),
+                    Fan2ControlPlan = InitializeChart(),
+                    IsECControl = true,
+                    Profile = 0
+                };
+            }
+
             DataContext = viewModel;
 
             StartDevice();
@@ -137,6 +151,21 @@ namespace ThinkPadFanControl
             viewModel.Fan1Speed = ReadFan1Speed();
             viewModel.Fan2Speed = ReadFan2Speed();
 
+            UpdateProfileEnableStatus();
+
+            if (Math.Max(viewModel.CpuTemperture, viewModel.GpuTemperture) < 60)
+            {
+                viewModel.ColorMeteor = "Aquamarine";
+            }
+            else if (Math.Max(viewModel.CpuTemperture, viewModel.GpuTemperture) >= 80)
+            {
+                viewModel.ColorMeteor = "#FFFF7777";
+            }
+            else
+            {
+                viewModel.ColorMeteor = "Aquamarine";
+            }
+
         }
 
         private void CurveControl()
@@ -144,17 +173,18 @@ namespace ThinkPadFanControl
             if (viewModel.IsCurveControl == false) return;
 
             int fan1State = 0;
-            var plan = viewModel.Fan1ControlPlan;
+            var plan = viewModel.Fan1ControlPlan[viewModel.Profile];
 
             for (int i = 0; i < plan.Count - 1; i++)
             {
-                if (viewModel.CpuTemperture > plan[i].Temperture) {
+                if (viewModel.CpuTemperture > plan[i].Temperture)
+                {
                     fan1State = plan[i + 1].FanState;
                 }
             }
 
             int fan2State = 0;
-            plan = viewModel.Fan2ControlPlan;
+            plan = viewModel.Fan2ControlPlan[viewModel.Profile];
 
             for (int i = 0; i < plan.Count - 1; i++)
             {
@@ -168,6 +198,15 @@ namespace ThinkPadFanControl
             SetFan2State(fan2State);
         }
 
+        private static Icon CreateIcon(int temperture, string type)
+        {
+
+            Bitmap bitmap = new(96, 96);
+            Graphics g = Graphics.FromImage(bitmap);
+            g.DrawString(temperture + "\n" + type, new Font("Tahoma", 13), System.Drawing.Brushes.White, new PointF(0, 0));
+            Icon icon = System.Drawing.Icon.FromHandle(bitmap.GetHicon());
+            return icon;
+        }
         private void InitializeNotifyIcon()
         {
 
@@ -237,32 +276,52 @@ namespace ThinkPadFanControl
             };
         }
 
-        private static Icon CreateIcon(int temperture, string type)
+        private static ObservableCollection<ObservableCollection<FanControlPoint>> InitializeChart()
         {
 
-            Bitmap bitmap = new(96, 96);
-            Graphics g = Graphics.FromImage(bitmap);
-            g.DrawString(temperture + "\n" + type, new Font("Tahoma", 13), System.Drawing.Brushes.White, new PointF(0, 0));
-            Icon icon = System.Drawing.Icon.FromHandle(bitmap.GetHicon());
-            return icon;
+            ObservableCollection<ObservableCollection<FanControlPoint>> plan = new();
+
+            for (int i = 0; i < 3; i++)
+            {
+                ObservableCollection<FanControlPoint> profile = new ObservableCollection<FanControlPoint>
+                {
+                    new FanControlPoint() {Temperture=0, FanState=0x00},
+                    new FanControlPoint() {Temperture=10, FanState=0x00},
+                    new FanControlPoint() {Temperture=20, FanState=0x01},
+                    new FanControlPoint() {Temperture=30, FanState=0x02},
+                    new FanControlPoint() {Temperture=40, FanState=0x03},
+                    new FanControlPoint() {Temperture=50, FanState=0x04},
+                    new FanControlPoint() {Temperture=60, FanState=0x05},
+                    new FanControlPoint() {Temperture=70, FanState=0x06},
+                    new FanControlPoint() {Temperture=80, FanState=0x07},
+                    new FanControlPoint() {Temperture=90, FanState=0x07},
+                    new FanControlPoint() {Temperture=100, FanState=0x07}
+                };
+
+                plan.Add(profile);
+            }
+
+            return plan;
+
         }
 
-        private static ObservableCollection<FanControlPoint> InitializeChart()
+        private static void SyncCurve(ObservableCollection<FanControlPoint>? source, ObservableCollection<FanControlPoint>? target)
         {
-            return _ = new ObservableCollection<FanControlPoint>
+            if (source == null || target == null) return;
+
+            for (int i = 0; i < source.Count; i++)
             {
-                new FanControlPoint() {Temperture=0, FanState=0x00},
-                new FanControlPoint() {Temperture=10, FanState=0x00},
-                new FanControlPoint() {Temperture=20, FanState=0x01},
-                new FanControlPoint() {Temperture=30, FanState=0x02},
-                new FanControlPoint() {Temperture=40, FanState=0x03},
-                new FanControlPoint() {Temperture=50, FanState=0x04},
-                new FanControlPoint() {Temperture=60, FanState=0x05},
-                new FanControlPoint() {Temperture=70, FanState=0x06},
-                new FanControlPoint() {Temperture=80, FanState=0x07},
-                new FanControlPoint() {Temperture=90, FanState=0x07},
-                new FanControlPoint() {Temperture=100, FanState=0x07}
-            };
+                target[i].FanState = source[i].FanState;
+            }
+        }
+
+        private void UpdateProfileEnableStatus()
+        {
+            bool[] setting = { true, true, true };
+            setting[viewModel.Profile] = false;
+            viewModel.IsProfile1Enabled = setting[0];
+            viewModel.IsProfile2Enabled = setting[1];
+            viewModel.IsProfile3Enabled = setting[2];
         }
 
         private void BtnECControl_Click(object sender, RoutedEventArgs e)
@@ -290,48 +349,32 @@ namespace ThinkPadFanControl
 
         private void ChartFan1Control_DragEnd(object sender, Syncfusion.UI.Xaml.Charts.ChartDragEndEventArgs e)
         {
-            for (int i = viewModel.fan1ControlPlan.Count - 1; i >= 0; i--)
+
+            if (viewModel.IsCurveControlSync)
             {
-                if (i > 0 && viewModel.fan1ControlPlan[i].FanState < viewModel.fan1ControlPlan[i - 1].FanState)
-                {
-                    viewModel.fan1ControlPlan[i].FanState = viewModel.fan1ControlPlan[i - 1].FanState;
-                }
+                SyncCurve(viewModel.Fan1ControlPlan[viewModel.Profile], viewModel.Fan2ControlPlan[viewModel.Profile]);
             }
         }
 
         private void ChartFan2Control_DragEnd(object sender, Syncfusion.UI.Xaml.Charts.ChartDragEndEventArgs e)
         {
-            for (int i = viewModel.fan2ControlPlan.Count - 1; i >= 0; i--)
+
+            if (viewModel.IsCurveControlSync)
             {
-                if (i > 0 && viewModel.fan2ControlPlan[i].FanState < viewModel.fan2ControlPlan[i - 1].FanState)
-                {
-                    viewModel.fan2ControlPlan[i].FanState = viewModel.fan2ControlPlan[i - 1].FanState;
-                }
+                SyncCurve(viewModel.Fan2ControlPlan[viewModel.Profile], viewModel.Fan1ControlPlan[viewModel.Profile]);
             }
-        }
-
-        private void Window_Closed(object sender, EventArgs e)
-        {
-            CloseDevice();
-        }
-
-        private void BtnExit_Click(object sender, RoutedEventArgs e)
-        {
-            icon.Dispose();
-            // Environment.Exit(0);
-            System.Windows.Application.Current.Shutdown();
-
-        }
-
-        private void BtnHide_Click(object sender, RoutedEventArgs e)
-        {
-            this.Visibility = Visibility.Hidden;
         }
 
         private void CboFan1State_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
 
             if (viewModel.IsManualControl == false) return;
+
+            if (viewModel.IsManualControlSync)
+            {
+                string? newValue = viewModel.Fan1State;
+                viewModel.Fan2State = newValue;
+            }
 
             new Thread(new ThreadStart(delegate
             {
@@ -345,7 +388,6 @@ namespace ThinkPadFanControl
                     Console.WriteLine(ex.ToString());
                 }
 
-
             })).Start();
         }
 
@@ -353,6 +395,12 @@ namespace ThinkPadFanControl
         {
 
             if (viewModel.IsManualControl == false) return;
+
+            if (viewModel.IsManualControlSync)
+            {
+                string? newValue = viewModel.Fan2State;
+                viewModel.Fan1State = newValue;
+            }
 
             new Thread(new ThreadStart(delegate
             {
@@ -368,6 +416,38 @@ namespace ThinkPadFanControl
 
 
             })).Start();
+        }
+
+        private void Window_Closed(object sender, EventArgs e)
+        {
+            icon.Dispose();
+            File.WriteAllText(ini, JsonConvert.SerializeObject(viewModel));
+            CloseDevice();
+        }
+        private void Window_StateChanged(object sender, EventArgs e)
+        {
+            if (WindowState == WindowState.Minimized)
+            {
+                this.Visibility = Visibility.Hidden;
+            }
+        }
+
+        private void BtnProfile1_Click(object sender, RoutedEventArgs e)
+        {
+            viewModel.Profile = 0;
+            UpdateProfileEnableStatus();
+        }
+
+        private void BtnProfile2_Click(object sender, RoutedEventArgs e)
+        {
+            viewModel.Profile = 1;
+            UpdateProfileEnableStatus();
+        }
+
+        private void BtnProfile3_Click(object sender, RoutedEventArgs e)
+        {
+            viewModel.Profile = 2;
+            UpdateProfileEnableStatus();
         }
     }
 }

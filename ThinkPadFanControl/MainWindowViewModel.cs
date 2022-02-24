@@ -6,13 +6,14 @@ using System.Threading.Tasks;
 using System.ComponentModel;
 using System.Runtime.CompilerServices;
 using System.Collections.ObjectModel;
+using System.Windows.Data;
+using System.Globalization;
 
 namespace ThinkPadFanControl
 {
     internal class MainWindowViewModel : ViewModelBase
     {
         private string? cpuName;
-
         public string? CpuName
         {
             get => cpuName;
@@ -20,7 +21,6 @@ namespace ThinkPadFanControl
         }
 
         private string? gpuName;
-
         public string? GpuName
         {
             get => gpuName;
@@ -28,7 +28,6 @@ namespace ThinkPadFanControl
         }
 
         private int gpuTemperture;
-
         public int GpuTemperture
         {
             get => gpuTemperture;
@@ -36,7 +35,6 @@ namespace ThinkPadFanControl
         }
 
         private int cpuTemperture;
-
         public int CpuTemperture
         {
             get => cpuTemperture;
@@ -44,7 +42,6 @@ namespace ThinkPadFanControl
         }
 
         private int fan1Speed;
-
         public int Fan1Speed
         {
             get => fan1Speed;
@@ -52,15 +49,21 @@ namespace ThinkPadFanControl
         }
 
         private int fan2Speed;
-
         public int Fan2Speed
         {
             get => fan2Speed;
             set => SetProperty(ref fan2Speed, value);
         }
 
-        private string? fan1State;
+        private string? colorMeteor;
+        public string? ColorMeteor
+        {
+            get => colorMeteor;
+            set => SetProperty(ref colorMeteor, value);
+        }
 
+
+        private string? fan1State;
         public string? Fan1State
         {
             get => fan1State;
@@ -68,44 +71,84 @@ namespace ThinkPadFanControl
         }
 
         private string? fan2State;
-
         public string? Fan2State
         {
             get => fan2State;
             set => SetProperty(ref fan2State, value);
         }
 
-        public bool isECControl;
+        private bool isECControl;
         public bool IsECControl
         {
             get => isECControl;
             set => SetProperty(ref isECControl, value);
         }
 
-        public bool isManualControl;
+        private bool isManualControl;
         public bool IsManualControl
         {
             get => isManualControl;
             set => SetProperty(ref isManualControl, value);
         }
 
-        public bool isCurveControl;
+        private bool isCurveControl;
         public bool IsCurveControl
         {
             get => isCurveControl;
             set => SetProperty(ref isCurveControl, value);
         }
 
-        public ObservableCollection<FanControlPoint>? fan1ControlPlan;
+        private bool isManualControlSync;
+        public bool IsManualControlSync
+        {
+            get => isManualControlSync;
+            set => SetProperty(ref isManualControlSync, value);
+        }
 
-        public ObservableCollection<FanControlPoint>? Fan1ControlPlan
+        private bool isCurveControlSync;
+        public bool IsCurveControlSync
+        {
+            get => isCurveControlSync;
+            set => SetProperty(ref isCurveControlSync, value);
+        }
+
+        private int profile;
+        public int Profile
+        {
+            get => profile;
+            set => SetProperty(ref profile, value);
+        }
+
+        private bool isProfile1Enabled;
+        public bool IsProfile1Enabled
+        {
+            get => isProfile1Enabled;
+            set => SetProperty(ref isProfile1Enabled, value);
+        }
+
+        private bool isProfile2Enabled;
+        public bool IsProfile2Enabled
+        {
+            get => isProfile2Enabled;
+            set => SetProperty(ref isProfile2Enabled, value);
+        }
+
+        private bool isProfile3Enabled;
+        public bool IsProfile3Enabled
+        {
+            get => isProfile3Enabled;
+            set => SetProperty(ref isProfile3Enabled, value);
+        }
+
+        private ObservableCollection<ObservableCollection<FanControlPoint>>? fan1ControlPlan;
+        public ObservableCollection<ObservableCollection<FanControlPoint>>? Fan1ControlPlan
         {
             get => fan1ControlPlan;
             set => SetProperty(ref fan1ControlPlan, value);
         }
 
-        public ObservableCollection<FanControlPoint>? fan2ControlPlan;
-        public ObservableCollection<FanControlPoint>? Fan2ControlPlan
+        private ObservableCollection<ObservableCollection<FanControlPoint>>? fan2ControlPlan;
+        public ObservableCollection<ObservableCollection<FanControlPoint>>? Fan2ControlPlan
         {
             get => fan2ControlPlan;
             set => SetProperty(ref fan2ControlPlan, value);
@@ -141,4 +184,18 @@ namespace ThinkPadFanControl
 
     }
 
+    internal class ChartProfileConverter : IMultiValueConverter
+    {
+        public object Convert(object[] values, Type targetType, object parameter, CultureInfo culture)
+        {
+            var plan = (ObservableCollection<ObservableCollection<FanControlPoint>>)values[0];
+            int profile = (int)values[1];
+            return plan[profile];
+        }
+
+        public object[] ConvertBack(object value, Type[] targetTypes, object parameter, CultureInfo culture)
+        {
+            throw new NotImplementedException();
+        }
+    }
 }
